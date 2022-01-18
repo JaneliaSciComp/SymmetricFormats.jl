@@ -115,6 +115,18 @@ function copy(A::SymmetricPacked{T,S}) where {T,S}
     SymmetricPacked{T,S}(B, A.n, A.uplo)
 end
 
+@inline function mul!(y::StridedVector{T},
+                      AP::SymmetricPacked{T,<:StridedMatrix},
+                      x::StridedVector{T},
+                      α::Number, β::Number) where {T<:BlasFloat}
+    alpha, beta = promote(α, β, zero(T))
+    if alpha isa Union{Bool,T} && beta isa Union{Bool,T}
+        BLAS.spmv!(AP.uplo, alpha, AP.tri, x, beta, y)
+    else
+        generic_matvecmul!(y, 'N', AP, x, MulAddMul(alpha, beta))
+    end
+end
+
 VERSION<v"1.8.0-DEV.1049" && include("blas.jl")
 
 end # module
