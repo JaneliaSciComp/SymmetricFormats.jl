@@ -1,5 +1,118 @@
 module PackedArrays
 
-greet() = print("Hello World!")
+import Base: require_one_based_indexing, size, convert, unsafe_convert
+import Base: getindex, setindex!, copy
+import LinearAlgebra: checksquare, char_uplo
+import LinearAlgebra: mul!, BLAS, BlasFloat, generic_matvecmul!, MulAddMul
+
+export SymmetricPacked
+
+struct SymmetricPacked{T,S<:AbstractMatrix{<:T}} <: AbstractMatrix{T}
+    tri::Vector{T}
+    n::Int
+    uplo::Char
+
+    function SymmetricPacked{T,S}(tri, n, uplo) where {T,S<:AbstractMatrix{<:T}}
+        require_one_based_indexing(tri)
+        uplo=='U' || uplo=='L' || throw(ArgumentError("uplo must be either 'U' (upper) or 'L' (lower)"))
+        new{T,S}(tri, n, uplo)
+    end
+end
+
+function pack(A, uplo)
+    n = size(A,1)
+    AP = Vector{eltype(A)}(undef, (n*(n+1))>>1)
+    k = 1
+    for j in 1:n
+        for i in (uplo==:L ? (j:n) : (1:j))
+            AP[k] = A[i,j]
+            k += 1
+        end
+    end
+    return AP
+end
+
+"""
+    SymmetricPacked(A, uplo=:U)
+
+Construct a `Symmetric` matrix in packed form of the upper (if `uplo = :U`)
+or lower (if `uplo = :L`) triangle of the matrix `A`.
+
+# Examples
+```jldoctest
+julia> A = [1 0 2 0 3; 0 4 0 5 0; 6 0 7 0 8; 0 9 0 1 0; 2 0 3 0 4]
+5×5 Matrix{Int64}:
+ 1  0  2  0  3
+ 0  4  0  5  0
+ 6  0  7  0  8
+ 0  9  0  1  0
+ 2  0  3  0  4
+
+julia> AP = SymmetricPacked(A)
+5×5 SymmetricPacked{Int64, Matrix{Int64}}:
+ 1  0  2  0  3
+ 0  4  0  5  0
+ 2  0  7  0  8
+ 0  5  0  1  0
+ 3  0  8  0  4
+
+julia> Base.summarysize(A)
+240
+
+julia> Base.summarysize(AP)
+184
+```
+"""
+function SymmetricPacked(A::AbstractMatrix{T}, uplo::Symbol=:U) where {T}
+    n = checksquare(A)
+    SymmetricPacked{T,typeof(A)}(pack(A, uplo), n, char_uplo(uplo))
+end
+
+function SymmetricPacked(x::SymmetricPacked{T,S}) where{T,S}
+    SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
+end
+
+checksquare(x::SymmetricPacked) = x.n
+
+convert(::Type{SymmetricPacked{T,S}}, x::SymmetricPacked) where {T,S} = SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
+
+unsafe_convert(::Type{Ptr{S}}, A::SymmetricPacked{S,T}) where {S,T} = Base.unsafe_convert(Ptr{S}, A.tri)
+
+size(A::SymmetricPacked) = (A.n,A.n)
+
+function size(A::SymmetricPacked, d::Integer)
+    d<1 && throw(ArgumentError("dimension must be ≥ 1, got $d"))
+    d<=2 ? A.n : 1
+end
+
+@inline function getindex(A::SymmetricPacked, i::Int, j::Int)
+    @boundscheck checkbounds(A, i, j)
+    if A.uplo=='U'
+        i,j = minmax(i,j)
+        @inbounds r = A.tri[i+(j*(j-1))>>1]
+    else
+        j,i = minmax(i,j)
+        @inbounds r = A.tri[i+((2*A.n-j)*(j-1))>>1]
+    end
+    return r
+end
+
+function setindex!(A::SymmetricPacked, v, i::Int, j::Int)
+    i!=j && throw(ArgumentError("Cannot set a non-diagonal index in a symmetric matrix"))
+    @boundscheck checkbounds(A, i, j)
+    if A.uplo=='U'
+        i,j = minmax(i,j)
+        @inbounds A.tri[i+(j*(j-1))>>1] = v
+    else
+        j,i = minmax(i,j)
+        @inbounds A.tri[i+((2*A.n-j)*(j-1))>>1] = v
+    end
+    return v
+end
+
+function copy(A::SymmetricPacked{T,S}) where {T,S}
+    B = copy(A.tri)
+    SymmetricPacked{T,S}(B, A.n, A.uplo)
+end
 
 end # module
