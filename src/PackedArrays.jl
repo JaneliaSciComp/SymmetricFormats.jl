@@ -19,9 +19,9 @@ struct SymmetricPacked{T,S<:AbstractMatrix{<:T}} <: AbstractMatrix{T}
     end
 end
 
-function pack(A, uplo)
+function pack(A::AbstractMatrix{T}, uplo::Symbol) where {T}
     n = size(A,1)
-    AP = Vector{eltype(A)}(undef, (n*(n+1))>>1)
+    AP = Vector{T}(undef, (n*(n+1))>>1)
     k = 1
     for j in 1:n
         for i in (uplo==:L ? (j:n) : (1:j))
@@ -76,7 +76,7 @@ checksquare(x::SymmetricPacked) = x.n
 
 convert(::Type{SymmetricPacked{T,S}}, x::SymmetricPacked) where {T,S} = SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
 
-unsafe_convert(::Type{Ptr{S}}, A::SymmetricPacked{S,T}) where {S,T} = Base.unsafe_convert(Ptr{S}, A.tri)
+unsafe_convert(::Type{Ptr{T}}, A::SymmetricPacked{T,S}) where {T,S} = Base.unsafe_convert(Ptr{T}, A.tri)
 
 size(A::SymmetricPacked) = (A.n,A.n)
 
