@@ -2,3 +2,9 @@ name = "PackedArrays"
 uuid = "a91e544d-b3d6-4431-ae28-0549b1291c16"
 authors = ["Ben Arthur <arthurb@hhmi.org>"]
 version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[compat]
+julia = "1.7"

@@ -115,4 +115,6 @@ function copy(A::SymmetricPacked{T,S}) where {T,S}
     SymmetricPacked{T,S}(B, A.n, A.uplo)
 end
 
+VERSION<v"1.8.0-DEV.1049" && include("blas.jl")
+
 end # module
