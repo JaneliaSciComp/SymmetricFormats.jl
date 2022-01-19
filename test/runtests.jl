@@ -1,4 +1,4 @@
-using PackedArrays, Test, LinearAlgebra
+using SymmetricFormats, Test, LinearAlgebra
 
 A = collect(reshape(1:9.0,3,3))
 

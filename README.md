@@ -1,9 +1,9 @@
-PackedArrays.jl defines the `SymmetricPacked` type which concatenates the
+SymmetricFormats.jl defines the `SymmetricPacked` type which concatenates the
 columns of either the upper or lower triangle into a vector thereby using
 only a little more than half the memory.
 
 ```
-julia> using PackedArrays
+julia> using SymmetricFormats
 
 julia> A = rand(5,5)
 5×5 Matrix{Float64}:

@@ -1,4 +1,4 @@
-module PackedArrays
+module SymmetricFormats
 
 import Base: require_one_based_indexing, size, convert, unsafe_convert
 import Base: getindex, setindex!, copy
