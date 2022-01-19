@@ -2,6 +2,14 @@ SymmetricFormats.jl defines the `SymmetricPacked` type which concatenates the
 columns of either the upper or lower triangle into a vector thereby using
 only a little more than half the memory.
 
+Other formats to efficiently store symmetric matrices, which
+are not (yet) implemented here, include recursive packed (RP;
+Andersen et al 2001, 2002), square block packed (SBP; Gustavson
+2003), block packed hybrid (BPH; Andersen et al 2005, Gustavson et
+al 2007), and rectangular full packed (RFP; Gustavson et al 2009).  See
+[GenericLinearAlgebra.jl](https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl)
+for an Julian implementation of RFP.
+
 ```
 julia> using SymmetricFormats
 
