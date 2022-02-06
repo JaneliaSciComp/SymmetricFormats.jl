@@ -29,4 +29,10 @@ end
     @test packedsize(AP) == 6
 end
 
+@testset "vector constructor" begin
+    AP = SymmetricPacked(A)
+    BP = SymmetricPacked(AP.tri)
+    @test AP == BP
+end
+
 VERSION<v"1.8.0-DEV.1049" && include("blas.jl")

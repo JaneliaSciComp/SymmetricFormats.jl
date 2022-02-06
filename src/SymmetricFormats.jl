@@ -7,12 +7,12 @@ import LinearAlgebra: mul!, BLAS, BlasFloat, generic_matvecmul!, MulAddMul
 
 export SymmetricPacked, packedsize
 
-struct SymmetricPacked{T,S<:AbstractMatrix{<:T}} <: AbstractMatrix{T}
+struct SymmetricPacked{T,S<:AbstractVecOrMat{<:T}} <: AbstractMatrix{T}
     tri::Vector{T}
     n::Int
     uplo::Char
 
-    function SymmetricPacked{T,S}(tri, n, uplo) where {T,S<:AbstractMatrix{<:T}}
+    function SymmetricPacked{T,S}(tri, n, uplo) where {T,S<:AbstractVecOrMat{<:T}}
         require_one_based_indexing(tri)
         uplo=='U' || uplo=='L' || throw(ArgumentError("uplo must be either 'U' (upper) or 'L' (lower)"))
         new{T,S}(tri, n, uplo)
@@ -70,6 +70,12 @@ end
 
 function SymmetricPacked(x::SymmetricPacked{T,S}) where{T,S}
     SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
+end
+
+function SymmetricPacked(V::AbstractVector{T}, uplo::Symbol=:U) where {T}
+    n = (sqrt(1+8*length(V))-1)/2
+    isinteger(n) || throw(DimensionMismatch("length of vector does not corresond to the number of elements in the triangle of a square matrix"))
+    SymmetricPacked{T,typeof(V)}(V, round(Int, n), char_uplo(uplo))
 end
 
 checksquare(x::SymmetricPacked) = x.n
