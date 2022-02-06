@@ -48,6 +48,9 @@ julia> AP.tri
  0.6164510864085191
  0.3693525034730706
 
+julia> packedsize(AP)
+15
+
 julia> Base.summarysize(A)
 240
 

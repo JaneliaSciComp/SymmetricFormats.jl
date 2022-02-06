@@ -23,4 +23,10 @@ end
     end
 end
 
+@testset "packedsize" begin
+    @test packedsize(A) == 6
+    AP = SymmetricPacked(A)
+    @test packedsize(AP) == 6
+end
+
 VERSION<v"1.8.0-DEV.1049" && include("blas.jl")

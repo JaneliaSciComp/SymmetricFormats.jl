@@ -5,7 +5,7 @@ import Base: getindex, setindex!, copy
 import LinearAlgebra: checksquare, char_uplo
 import LinearAlgebra: mul!, BLAS, BlasFloat, generic_matvecmul!, MulAddMul
 
-export SymmetricPacked
+export SymmetricPacked, packedsize
 
 struct SymmetricPacked{T,S<:AbstractMatrix{<:T}} <: AbstractMatrix{T}
     tri::Vector{T}
@@ -83,6 +83,18 @@ size(A::SymmetricPacked) = (A.n,A.n)
 function size(A::SymmetricPacked, d::Integer)
     d<1 && throw(ArgumentError("dimension must be ≥ 1, got $d"))
     d<=2 ? A.n : 1
+end
+
+"""
+    packedsize(A)
+
+Return the number of elements in the triangle of a square matrix.
+"""
+packedsize(A::SymmetricPacked) = length(A.tri)
+
+function packedsize(A::AbstractArray)
+    n = checksquare(A)
+    (n*(n+1))>>1
 end
 
 @inline function getindex(A::SymmetricPacked, i::Int, j::Int)
