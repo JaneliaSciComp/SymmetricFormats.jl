@@ -1,6 +1,7 @@
-SymmetricFormats.jl defines the `SymmetricPacked` type which concatenates the
-columns of either the upper or lower triangle into a vector thereby using
-only a little more than half the memory.
+SymmetricFormats.jl defines the `SymmetricPacked` type which
+[concatenates](http://www.netlib.org/lapack/lug/node123.html) the columns
+of either the upper or lower triangle into a vector thereby using only a
+little more than half the memory.
 
 Other formats to efficiently store symmetric matrices, which
 are not (yet) implemented here, include recursive packed (RP;
