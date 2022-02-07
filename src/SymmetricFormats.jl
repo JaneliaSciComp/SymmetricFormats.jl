@@ -7,15 +7,15 @@ import LinearAlgebra: mul!, BLAS, BlasFloat, generic_matvecmul!, MulAddMul
 
 export SymmetricPacked, packedsize
 
-struct SymmetricPacked{T,S<:AbstractVecOrMat{<:T}} <: AbstractMatrix{T}
+struct SymmetricPacked{T,S<:AbstractVecOrMat{<:T},R} <: AbstractMatrix{T}
     tri::Vector{T}
     n::Int
     uplo::Char
 
-    function SymmetricPacked{T,S}(tri, n, uplo) where {T,S<:AbstractVecOrMat{<:T}}
+    function SymmetricPacked{T,S,R}(tri, n, uplo) where {T,S<:AbstractVecOrMat{<:T},R}
         require_one_based_indexing(tri)
         uplo=='U' || uplo=='L' || throw(ArgumentError("uplo must be either 'U' (upper) or 'L' (lower)"))
-        new{T,S}(tri, n, uplo)
+        new{T,S,R}(tri, n, uplo)
     end
 end
 
@@ -33,10 +33,11 @@ function pack(A::AbstractMatrix{T}, uplo::Symbol) where {T}
 end
 
 """
-    SymmetricPacked(A, uplo=:U)
+    SymmetricPacked(A, uplo=:U, offdiag=Val(:RO))
 
 Construct a `Symmetric` matrix in packed form of the upper (if `uplo = :U`)
-or lower (if `uplo = :L`) triangle of the matrix `A`.
+or lower (if `uplo = :L`) triangle of the matrix `A`.  `offdiag` specifies
+whether elements not on the diagaonal can be set (if `:RW`) or not (if `:RO`).
 
 # Examples
 ```jldoctest
@@ -63,26 +64,26 @@ julia> Base.summarysize(AP)
 184
 ```
 """
-function SymmetricPacked(A::AbstractMatrix{T}, uplo::Symbol=:U) where {T}
+function SymmetricPacked(A::AbstractMatrix{T}, uplo::Symbol=:U, offdiag=Val(:RO)) where {T}
     n = checksquare(A)
-    SymmetricPacked{T,typeof(A)}(pack(A, uplo), n, char_uplo(uplo))
+    SymmetricPacked{T,typeof(A),offdiag}(pack(A, uplo), n, char_uplo(uplo))
 end
 
-function SymmetricPacked(x::SymmetricPacked{T,S}) where{T,S}
-    SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
+function SymmetricPacked(x::SymmetricPacked{T,S,R}) where{T,S,R}
+    SymmetricPacked{T,S,R}(T.(x.tri), x.n, x.uplo)
 end
 
-function SymmetricPacked(V::AbstractVector{T}, uplo::Symbol=:U) where {T}
+function SymmetricPacked(V::AbstractVector{T}, uplo::Symbol=:U, offdiag=Val(:RO)) where {T}
     n = (sqrt(1+8*length(V))-1)/2
     isinteger(n) || throw(DimensionMismatch("length of vector does not corresond to the number of elements in the triangle of a square matrix"))
-    SymmetricPacked{T,typeof(V)}(V, round(Int, n), char_uplo(uplo))
+    SymmetricPacked{T,typeof(V),offdiag}(V, round(Int, n), char_uplo(uplo))
 end
 
 checksquare(x::SymmetricPacked) = x.n
 
-convert(::Type{SymmetricPacked{T,S}}, x::SymmetricPacked) where {T,S} = SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
+convert(::Type{SymmetricPacked{T,S,R}}, x::SymmetricPacked) where {T,S,R} = SymmetricPacked{T,S}(T.(x.tri), x.n, x.uplo)
 
-unsafe_convert(::Type{Ptr{T}}, A::SymmetricPacked{T,S}) where {T,S} = Base.unsafe_convert(Ptr{T}, A.tri)
+unsafe_convert(::Type{Ptr{T}}, A::SymmetricPacked{T,S,R}) where {T,S,R} = Base.unsafe_convert(Ptr{T}, A.tri)
 
 size(A::SymmetricPacked) = (A.n,A.n)
 
@@ -115,8 +116,7 @@ end
     return r
 end
 
-function setindex!(A::SymmetricPacked, v, i::Int, j::Int)
-    i!=j && throw(ArgumentError("Cannot set a non-diagonal index in a symmetric matrix"))
+function _setindex!(A::SymmetricPacked, v, i::Int, j::Int)
     @boundscheck checkbounds(A, i, j)
     if A.uplo=='U'
         i,j = minmax(i,j)
@@ -128,15 +128,22 @@ function setindex!(A::SymmetricPacked, v, i::Int, j::Int)
     return v
 end
 
+function setindex!(A::SymmetricPacked{T,S,Val(:RO)}, v, i::Int, j::Int) where {T,S}
+    i!=j && throw(ArgumentError("Cannot set a non-diagonal index in a symmetric matrix"))
+    _setindex!(A, v, i, j)
+end
+
+setindex!(A::SymmetricPacked{T,S,Val(:RW)}, v, i::Int, j::Int) where {T,S} = _setindex!(A, v, i, j)
+
 function copy(A::SymmetricPacked{T,S}) where {T,S}
     B = copy(A.tri)
     SymmetricPacked{T,S}(B, A.n, A.uplo)
 end
 
 @inline function mul!(y::StridedVector{T},
-                      AP::SymmetricPacked{T,<:StridedMatrix},
+                      AP::SymmetricPacked{T,<:StridedMatrix,R},
                       x::StridedVector{T},
-                      α::Number, β::Number) where {T<:BlasFloat}
+                      α::Number, β::Number) where {T<:BlasFloat,R}
     alpha, beta = promote(α, β, zero(T))
     if alpha isa Union{Bool,T} && beta isa Union{Bool,T}
         BLAS.spmv!(AP.uplo, alpha, AP.tri, x, beta, y)

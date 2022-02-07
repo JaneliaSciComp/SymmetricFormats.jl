@@ -9,6 +9,40 @@ A = collect(reshape(1:9.0,3,3))
     @test_throws ArgumentError APL[1,3]=3
 end
 
+@testset "read/write upper" begin
+    APU = SymmetricPacked(A, :U, Val(:RW))
+
+    @test APU[1,1] == A[1,1]
+    @test APU[1,2] == A[1,2]
+    @test APU[1,3] == A[1,3]
+    @test APU[2,1] == A[1,2]
+    @test APU[2,2] == A[2,2]
+    @test APU[2,3] == A[2,3]
+    @test APU[3,1] == A[1,3]
+    @test APU[3,2] == A[2,3]
+    @test APU[3,3] == A[3,3]
+
+    APU[1,2] = 0
+    @test APU[2,1] == 0
+end
+
+@testset "read/write lower" begin
+    APL = SymmetricPacked(A, :L, Val(:RW))
+
+    @test APL[1,1] == A[1,1]
+    @test APL[1,2] == A[2,1]
+    @test APL[1,3] == A[3,1]
+    @test APL[2,1] == A[2,1]
+    @test APL[2,2] == A[2,2]
+    @test APL[2,3] == A[3,2]
+    @test APL[3,1] == A[3,1]
+    @test APL[3,2] == A[3,2]
+    @test APL[3,3] == A[3,3]
+
+    APL[1,2] = 0
+    @test APL[2,1] == 0
+end
+
 @testset "mul!" begin
     for uplo in [:U, :L]
         y = Float64[1,2,3]
