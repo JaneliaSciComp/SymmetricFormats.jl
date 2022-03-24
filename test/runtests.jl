@@ -33,6 +33,33 @@ end
     AP = SymmetricPacked(A)
     BP = SymmetricPacked(AP.tri)
     @test AP == BP
+    @test parent(BP) == AP.tri
+end
+
+A3 = collect(reshape(1:45.0,3,3,5))
+
+@testset "batched" begin
+    BAP = BatchedSymmetricPacked(A3, :L)
+    BAP[1,1,1]=3
+    @test BAP[1,1,1] == 3
+    @test_throws ArgumentError BAP[1,3,1]=3
+    @test packedsize(A3) == 30
+    @test packedsize(BAP) == 30
+    VBP = BatchedSymmetricPacked(BAP.tri, :L)
+    @test VBP == BAP
+
+    BA = BatchedSymmetric(A3, :L)
+    BA[1,1,1]=3
+    @test BA[1,1,1] == 3
+    @test_throws ArgumentError BA[1,3,1]=3
+
+    BA = BatchedMatrix(A3)
+    BA[1,1,1]=3
+    @test BA[1,1,1] == 3
+
+    BA = BatchedVector(A3[:,1,:])
+    BA[1,1]=3
+    @test BA[1,1] == 3
 end
 
 VERSION<v"1.8.0-DEV.1049" && include("blas.jl")
