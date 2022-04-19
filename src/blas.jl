@@ -1,6 +1,14 @@
-import LinearAlgebra.BLAS: libblastrampoline, @blasfunc, BlasInt, BlasReal
+import LinearAlgebra.BLAS: @blasfunc, BlasInt, BlasReal
 
 export spr!
+
+@static if VERSION < v"1.7-"
+    import LinearAlgebra.BLAS: libblas
+    thislib = libblas
+else
+    import LinearAlgebra.BLAS: libblastrampoline
+    thislib = libblastrampoline
+end
 
 for (fname, elty) in ((:dspr_, :Float64),
                       (:sspr_, :Float32))
@@ -12,7 +20,7 @@ for (fname, elty) in ((:dspr_, :Float64),
                       incx::Integer,
                       AP::Union{Ptr{$elty}, AbstractArray{$elty}})
 
-            ccall((@blasfunc($fname), libblastrampoline), Cvoid,
+            ccall((@blasfunc($fname), thislib), Cvoid,
                   (Ref{UInt8},     # uplo,
                    Ref{BlasInt},   # n,
                    Ref{$elty},     # α,
