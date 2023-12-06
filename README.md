@@ -101,3 +101,47 @@ julia> mul!(copy(y), AP, x, α, β)  # or use the equivalent julian interface
  0.9592679333345454
  0.27783932357851576
 ```
+
+`SymmetricPacked` differs in one important aspect to `LinearAlgebra.Symmetric`
+in that it optionally permits off diagonal elements to be set.  Continuing
+from the example above:
+
+```
+julia> AP[1,1]=5
+5
+
+julia> AP
+5×5 SymmetricPacked{Float64, Matrix{Float64}, Val{:RO}()}:
+ 5.0       0.736451   0.704095   0.842738  0.207618
+ 0.736451  0.63549    0.861638   0.834968  0.0660772
+ 0.704095  0.861638   0.131074   0.727387  0.0995039
+ 0.842738  0.834968   0.727387   0.96513   0.616451
+ 0.207618  0.0660772  0.0995039  0.616451  0.369353
+
+julia> AP[1,5]=5
+ERROR: ArgumentError: Cannot set a non-diagonal index in a symmetric matrix
+Stacktrace:
+ [1] setindex!(A::SymmetricPacked{Float64, Matrix{Float64}, Val{:RO}()}, v::Int64, i::Int64, j::Int64)
+   @ PackedArrays ~/projects/darshan/PackedArrays/src/PackedArrays.jl:114
+ [2] top-level scope
+   @ REPL[7]:1
+
+julia> APRW = SymmetricPacked(A, :L, Val(:RW))  # default is :RO
+5×5 SymmetricPacked{Float64, Matrix{Float64}, Val{:RW}()}:
+ 0.364856   0.0797498   0.152769    0.201612   0.283603
+ 0.0797498  0.63549     0.00271082  0.0429332  0.818754
+ 0.152769   0.00271082  0.131074    0.682401   0.76548
+ 0.201612   0.0429332   0.682401    0.96513    0.284176
+ 0.283603   0.818754    0.76548     0.284176   0.369353
+
+julia> APRW[1,5]=5
+5
+
+julia> APRW
+5×5 SymmetricPacked{Float64, Matrix{Float64}, Val{:RW}()}:
+ 0.364856   0.0797498   0.152769    0.201612   5.0
+ 0.0797498  0.63549     0.00271082  0.0429332  0.818754
+ 0.152769   0.00271082  0.131074    0.682401   0.76548
+ 0.201612   0.0429332   0.682401    0.96513    0.284176
+ 5.0        0.818754    0.76548     0.284176   0.369353
+```
