@@ -3,6 +3,12 @@ SymmetricFormats.jl defines the `SymmetricPacked` type which
 of either the upper or lower triangle into a vector thereby using only a
 little more than half the memory.
 
+Also defined here are the `BatchedSymmetric` and `BatchedSymmetricPacked`
+types, which add a third dimension to store multiple Symmetric
+and SymmetricPacked matrices in the same container.  See
+[BatchedBLAS.jl](https://github.com/JaneliaSciComp/BatchedBLAS.jl) for
+methods which dispatch on these types.
+
 Other formats to efficiently store symmetric matrices, which
 are not (yet) implemented here, include recursive packed (RP;
 Andersen et al 2001, 2002), square block packed (SBP; Gustavson
